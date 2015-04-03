@@ -187,6 +187,9 @@ def cleanup(config, job_names, jenkins, verbose=True):
                 clean_tag = xml.xpath(tagxpath)
                 if not config['cleanup'] in clean_tag:
                     continue
+            else:
+                print("Don't set cleanup to true, fool. You tried to delete all the jobs. For shame.")
+                raise Exception
 
             removed_jobs.append(job)
             if not config['dryrun']:
