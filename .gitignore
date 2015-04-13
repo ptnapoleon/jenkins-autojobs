@@ -17,3 +17,4 @@ tags
 doc/_build
 tests/tmp/*
 .tox/
+jenkins_autojobs/cassandra/

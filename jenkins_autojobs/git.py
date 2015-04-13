@@ -16,6 +16,9 @@ from jenkins_autojobs.main import main as _main, debug_refconfig
 from jenkins_autojobs.util import sanitize, check_output, merge
 from jenkins_autojobs.job import Job
 
+import time
+import datetime
+
 
 #-----------------------------------------------------------------------------
 def git_refs_iter_local(repo):
@@ -25,7 +28,7 @@ def git_refs_iter_local(repo):
     return (ref for sha, ref in [i.split() for i in out if i])
 
 def git_refs_iter_remote(repo):
-    cmd = ('git', 'ls-remote', repo)
+    cmd = ('git', 'ls-remote', '--heads', repo)
     out = check_output(cmd).decode('utf8').split(linesep)
 
     for sha, ref in (i.split() for i in out if i):
@@ -35,7 +38,42 @@ def git_refs_iter_remote(repo):
         if ref.endswith('^{}'):
             continue
 
+        if stale_branch(ref, repo):
+            continue
+
         yield ref
+
+# Takes a string argument `ref` that corresponds
+# to a branch in `repo`
+# Returns the timestamp as shown by
+# --date=short
+def get_newest_commit_from_branch(ref, repo):
+    repo_path = path.join(path.dirname(path.realpath(__file__)), 'cassandra')
+    if not path.isdir(repo_path):
+        cmd = ('git', 'clone', '--bare', 'https://github.com/apache/cassandra', repo_path)
+        check_output(cmd).decode('utf8')
+    cmd = ('git', '--git-dir=%s' % repo_path, 'fetch', repo, ref)
+    check_output(cmd).decode('utf8')
+    cmd = ('git', '--git-dir=%s' % repo_path, 'show', '--date=short', '--quiet', 'FETCH_HEAD')
+    out = check_output(cmd).decode('utf8')
+    return out
+
+# Takes the timestamp for a git commit
+# In the git --date=short format.
+# Returns the unix timestamp.
+def get_commit_timestamp(message):
+    commit_date = re.search('Date:(.*?)\n', message).groups()[0].strip()
+    return time.mktime(datetime.datetime.strptime(commit_date, "%Y-%m-%d").timetuple())
+
+# Takes a string argument `ref` that corresponds
+# to a branch in `repo`
+# Returns if the branch is more than 3 months old
+def stale_branch(ref, repo):
+    now = time.time()
+    commit_message = get_newest_commit_from_branch(ref, repo)
+    then = get_commit_timestamp(commit_message)
+
+    return now - then >= 7889230
 
 def list_branches(config):
     # should ls-remote or git show-ref be used
