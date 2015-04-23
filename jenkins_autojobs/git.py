@@ -68,12 +68,15 @@ def get_commit_timestamp(message):
 # Takes a string argument `ref` that corresponds
 # to a branch in `repo`
 # Returns if the branch is more than 3 months old
+# Or if the branch is from before we started the autojobs
+# project. This is a simple timestamp check.
+# Easiest way to do it statelessly.
 def stale_branch(ref, repo):
     now = time.time()
     commit_message = get_newest_commit_from_branch(ref, repo)
     then = get_commit_timestamp(commit_message)
 
-    return now - then >= 7889230
+    return now - then >= 7889230 or then < 1429200000
 
 def list_branches(config):
     # should ls-remote or git show-ref be used
