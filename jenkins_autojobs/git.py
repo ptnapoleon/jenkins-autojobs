@@ -21,13 +21,13 @@ import datetime
 
 
 #-----------------------------------------------------------------------------
-def git_refs_iter_local(repo):
+def git_refs_iter_local(repo, *args):
     cmd = ('git', 'show-ref')
     out = check_output(cmd, cwd=repo).split(linesep)
 
     return (ref for sha, ref in [i.split() for i in out if i])
 
-def git_refs_iter_remote(repo):
+def git_refs_iter_remote(repo, stale, before):
     cmd = ('git', 'ls-remote', '--heads', repo)
     out = check_output(cmd).decode('utf8').split(linesep)
 
@@ -38,7 +38,7 @@ def git_refs_iter_remote(repo):
         if ref.endswith('^{}'):
             continue
 
-        if stale_branch(ref, repo):
+        if stale and stale_branch(ref, repo, stale, before):
             continue
 
         yield ref
@@ -71,19 +71,23 @@ def get_commit_timestamp(message):
 # Or if the branch is from before we started the autojobs
 # project. This is a simple timestamp check.
 # Easiest way to do it statelessly.
-def stale_branch(ref, repo):
+def stale_branch(ref, repo, stale, before):
     now = time.time()
     commit_message = get_newest_commit_from_branch(ref, repo)
     then = get_commit_timestamp(commit_message)
 
-    return now - then >= 7889230 or then < 1426649000
+    if stale:
+        return now - then >= stale or then < before
+    else:
+        return False
 
 def list_branches(config):
     # should ls-remote or git show-ref be used
     islocal = path.isdir(config['repo'])
     refs_iter = git_refs_iter_local if islocal else git_refs_iter_remote
 
-    return refs_iter(config['repo'])
+    return refs_iter(config['repo'], config['time_until_stale'],
+        config['ignore_before_timestamp'])
 
 def create_job(ref, template, config, ref_config):
     '''Create a jenkins job.

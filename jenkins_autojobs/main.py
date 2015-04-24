@@ -269,6 +269,16 @@ def get_default_config(config, opts):
     if not 'refs' in c:
         c['refs'] = ['.*']
 
+    # If no time_until_stale specified,
+    # do not mark branches as stale
+    if not 'time_until_stale' in c:
+        c['time_until_stale'] = None
+
+    # If no timestamp specified, include all
+    # non-stale branches
+    if not 'ignore_before_timestamp' in c:
+        c['ignore_before_timestamp'] = 0
+
     # Get the effective (accounting for inheritance) config for all refs.
     cfg = get_effective_branch_config(c['refs'], c['defaults'])
     c['refs'] = cfg
