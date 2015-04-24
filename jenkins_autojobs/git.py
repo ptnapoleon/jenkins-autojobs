@@ -76,7 +76,7 @@ def stale_branch(ref, repo):
     commit_message = get_newest_commit_from_branch(ref, repo)
     then = get_commit_timestamp(commit_message)
 
-    return now - then >= 7889230 or then < 1429200000
+    return now - then >= 7889230 or then < 1426649000
 
 def list_branches(config):
     # should ls-remote or git show-ref be used
