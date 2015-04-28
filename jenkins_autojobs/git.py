@@ -27,7 +27,7 @@ def git_refs_iter_local(repo, *args):
 
     return (ref for sha, ref in [i.split() for i in out if i])
 
-def git_refs_iter_remote(repo, stale, before):
+def git_refs_iter_remote(repo, stale, before, yamlpath):
     cmd = ('git', 'ls-remote', '--heads', repo)
     out = check_output(cmd).decode('utf8').split(linesep)
 
@@ -38,7 +38,7 @@ def git_refs_iter_remote(repo, stale, before):
         if ref.endswith('^{}'):
             continue
 
-        if stale and stale_branch(ref, repo, stale, before):
+        if stale and stale_branch(ref, repo, stale, before, yamlpath):
             continue
 
         yield ref
@@ -47,8 +47,8 @@ def git_refs_iter_remote(repo, stale, before):
 # to a branch in `repo`
 # Returns the timestamp as shown by
 # --date=short
-def get_newest_commit_from_branch(ref, repo):
-    repo_path = path.join(path.dirname(path.realpath(__file__)), 'cassandra')
+def get_newest_commit_from_branch(ref, repo, yamlpath):
+    repo_path = path.join(path.dirname(path.realpath(yamlpath)), 'cassandra')
     if not path.isdir(repo_path):
         cmd = ('git', 'clone', '--bare', 'https://github.com/apache/cassandra', repo_path)
         check_output(cmd).decode('utf8')
@@ -71,9 +71,9 @@ def get_commit_timestamp(message):
 # Or if the branch is from before we started the autojobs
 # project. This is a simple timestamp check.
 # Easiest way to do it statelessly.
-def stale_branch(ref, repo, stale, before):
+def stale_branch(ref, repo, stale, before, yamlpath):
     now = time.time()
-    commit_message = get_newest_commit_from_branch(ref, repo)
+    commit_message = get_newest_commit_from_branch(ref, repo, yamlpath)
     then = get_commit_timestamp(commit_message)
 
     if stale:
@@ -87,7 +87,7 @@ def list_branches(config):
     refs_iter = git_refs_iter_local if islocal else git_refs_iter_remote
 
     return refs_iter(config['repo'], config['time_until_stale'],
-        config['ignore_before_timestamp'])
+        config['ignore_before_timestamp'], config['yamlpath'])
 
 def create_job(ref, template, config, ref_config):
     '''Create a jenkins job.
