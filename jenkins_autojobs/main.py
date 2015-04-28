@@ -94,6 +94,7 @@ def main(argv, create_job, list_branches, getoptfmt='vdtnr:j:u:p:y:o:UPYO', conf
         config = yaml.load(open(yamlfn))
 
     config = c = get_default_config(config, opts)
+    config['yamlpath'] = yamlfn
 
     if config['debughttp']:
         enable_http_logging()
