@@ -54,7 +54,7 @@ def get_newest_commit_from_branch(ref, repo, yamlpath):
         check_output(cmd).decode('utf8')
     cmd = ('git', '--git-dir=%s' % repo_path, 'fetch', repo, ref)
     check_output(cmd).decode('utf8')
-    cmd = ('git', '--git-dir=%s' % repo_path, 'show', '--date=short', '--quiet', 'FETCH_HEAD')
+    cmd = ('git', '--git-dir=%s' % repo_path, 'show', '--format=%cd','--date=short', '--quiet', 'FETCH_HEAD')
     out = check_output(cmd).decode('utf8')
     return out
 
@@ -62,7 +62,7 @@ def get_newest_commit_from_branch(ref, repo, yamlpath):
 # In the git --date=short format.
 # Returns the unix timestamp.
 def get_commit_timestamp(message):
-    commit_date = re.search('Date:(.*?)\n', message).groups()[0].strip()
+    commit_date = message.strip()
     return time.mktime(datetime.datetime.strptime(commit_date, "%Y-%m-%d").timetuple())
 
 # Takes a string argument `ref` that corresponds
