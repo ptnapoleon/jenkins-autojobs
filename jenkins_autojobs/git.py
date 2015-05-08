@@ -60,9 +60,10 @@ def get_newest_commit_from_branch(ref, repo, yamlpath):
 
 # Takes the timestamp for a git commit
 # In the git --date=short format.
+# Works even on systems where --quiet fails
 # Returns the unix timestamp.
 def get_commit_timestamp(message):
-    commit_date = message.strip()
+    commit_date = re.search('(\d\d\d\d-\d\d-\d\d)\n', message).groups()[0].strip()
     return time.mktime(datetime.datetime.strptime(commit_date, "%Y-%m-%d").timetuple())
 
 # Takes a string argument `ref` that corresponds
