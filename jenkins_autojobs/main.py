@@ -39,7 +39,7 @@ except NameError:
 
 #-----------------------------------------------------------------------------
 usage = '''\
-Usage: %s [-rvdtjnyoupUYOP] <config.yaml>
+Usage: %s [-rvdtjnyoupUYOP] [--cleanup] <config.yaml>
 
 General Options:
   -n dry run
@@ -53,6 +53,7 @@ Repository Options:
   -o <arg> scm password
   -Y scm username (read from stdin)
   -O scm password (read from stdin)
+  --cleanup Cleanup old jobs
 
 Jenkins Options:
   -j <arg> jenkins url
@@ -182,15 +183,11 @@ def cleanup(config, job_names, jenkins, verbose=True):
 
     for job in managed_jobs:
         if job.name not in job_names and job.exists:
-            # If cleanup is a tag name, only cleanup builds with that tag.
-            if isinstance(config['cleanup'], str):
-                xml = etree.fromstring(job.config.encode('utf8'))
-                clean_tag = xml.xpath(tagxpath)
-                if not config['cleanup'] in clean_tag:
-                    continue
-            else:
-                print("Don't set cleanup to true, fool. You tried to delete all the jobs. For shame.")
-                raise Exception
+            # Only cleanup builds with the tag for this config.
+            xml = etree.fromstring(job.config.encode('utf8'))
+            clean_tag = xml.xpath(tagxpath)
+            if not config['tag'] in clean_tag:
+                continue
 
             removed_jobs.append(job)
             if not config['dryrun']:
@@ -203,7 +200,7 @@ def cleanup(config, job_names, jenkins, verbose=True):
 #-----------------------------------------------------------------------------
 def parse_args(argv, fmt):
     '''Parse getopt arguments as a dictionary.'''
-    opts, args = getopt(argv, fmt)
+    opts, args = getopt(argv, fmt, ['cleanup'])
     opts = dict(opts)
 
     if '-v' in opts:
@@ -250,6 +247,7 @@ def get_default_config(config, opts):
     if '-n' in o: c['dryrun'] = True
     if '-d' in o: c['debug'] = True
     if '-t' in o: c['debughttp'] = True
+    if '--cleanup' in o: c['cleanup'] = True
 
     # Jenkins authentication options.
     if '-u' in o: c['username'] = o['-u']
