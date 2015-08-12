@@ -169,6 +169,7 @@ def main(argv, create_job, list_branches, getoptfmt='vdtnr:j:u:p:y:o:UPYO', conf
 
     if config['cleanup']:
         job_names[config['template']] = {}
+        jenkins = main.jenkins = Jenkins(c['jenkins'], c['username'], c['password'])
         cleanup(config, job_names, jenkins)
 
 #-----------------------------------------------------------------------------
